@@ -6,6 +6,7 @@ package cmetrics
 
 #include <cmetrics/cmetrics.h>
 #include <cmetrics/cmt_gauge.h>
+#include <cmetrics/cmt_encode_prometheus.h>
 
 */
 import "C"
@@ -24,18 +25,24 @@ type CMTGauge struct {
 }
 
 func GoStringArrayToCptr(arr []string) **C.char {
-	var b *C.char
-	ptrSize := unsafe.Sizeof(b)
-
-	// Allocate the char** list.
-	ptr := C.malloc(C.size_t(len(arr)) * C.size_t(ptrSize))
+	size := C.size_t(unsafe.Sizeof((*C.char)(nil)))
+	length := C.size_t(len(arr))
+	ptr := C.malloc(length * size)
 
 	for i := 0; i < len(arr); i++ {
-		element := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*ptrSize))
-		*element = (*C.char)(unsafe.Pointer(&arr[i]))
+		element := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof((*C.char)(nil))))
+		*element = C.CString(string(arr[i]))
 	}
 
 	return (**C.char)(ptr)
+}
+
+func (g *CMTGauge) Add(ts time.Time, value float64, labelValues []string) error {
+	ret := C.cmt_gauge_add(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labelValues)), GoStringArrayToCptr(labelValues))
+	if ret != 0 {
+		return fmt.Errorf("cannot substract gauge value")
+	}
+	return nil
 }
 
 func (g *CMTGauge) Increment(ts time.Time, labelValues []string) error {
@@ -82,6 +89,14 @@ func (g *CMTGauge) Set(ts time.Time, value float64, labelValues []string) error 
 		return fmt.Errorf("cannot set gauge value")
 	}
 	return nil
+}
+
+func (ctx *CMTContext) PrometheusEncode() (string, error) {
+	ret := C.cmt_encode_prometheus_create(ctx.context, 1)
+	if ret == nil {
+		return "", fmt.Errorf("error encoding to prometheus format")
+	}
+	return C.GoString(ret), nil
 }
 
 func (ctx *CMTContext) NewGauge(namespace, subsystem, name, help string, labelKeys []string) (*CMTGauge, error) {
