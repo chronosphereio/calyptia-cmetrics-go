@@ -17,7 +17,7 @@ func (suite *TestLibSuite) TestContext() {
 	suite.NotNil(context)
 	context.Destroy()
 }
-func (suite *TestLibSuite) TestLabels() {
+func (suite *TestLibSuite) TestGaugeLabels() {
 	context, err := NewCMTContext()
 	suite.Nil(err)
 	suite.NotNil(context)
@@ -120,6 +120,92 @@ func (suite *TestLibSuite) TestGauge() {
 	val, err = gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Zero(val)
+
+	context.Destroy()
+}
+
+func (suite *TestLibSuite) TestCounterLabels() {
+	context, err := NewCMTContext()
+	suite.Nil(err)
+	suite.NotNil(context)
+
+	ts := time.Now()
+
+	counter, err := context.NewCounter("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	/* Default value for hash zero */
+	value, err := counter.GetValue( nil)
+	suite.Nil(err)
+	suite.Equal(0.0, value)
+
+	/* Increment hash zero by 1 */
+	err = counter.Increment(ts, nil)
+	suite.Nil(err)
+
+	err = counter.Add(ts, 2.0, nil)
+	suite.Nil(err)
+
+	value, err = counter.GetValue(nil)
+	suite.Nil(err)
+	suite.Equal(3.0, value)
+	/*
+	 * Test 2: custom labels
+	 * ---------------------
+	 */
+	/* Increment custom metric */
+	err = counter.Increment(ts, []string{"localhost", "cmetrics"})
+	suite.Nil(err)
+
+	value, err = counter.GetValue([]string{"localhost", "cmetrics"})
+	suite.Nil(err)
+	suite.Equal(1.0, value)
+
+	/* Add 10 to another metric using a different second label */
+	err = counter.Add(ts, 10, []string{"localhost", "test"})
+	suite.Nil(err)
+
+	value, err = counter.GetValue([]string{"localhost", "test"})
+	suite.Nil(err)
+	suite.Equal(10.00, value)
+
+	encoded, err := context.PrometheusEncode()
+	suite.Nil(err)
+
+	metricsTemplate := fmt.Sprintf(`# HELP kubernetes_network_load Network load
+# TYPE kubernetes_network_load counter
+kubernetes_network_load 3 %[1]v
+kubernetes_network_load{hostname="localhost",app="cmetrics"} 1 %[1]v
+kubernetes_network_load{hostname="localhost",app="test"} 10 %[1]v
+`, ts.UnixNano()/int64(time.Millisecond))
+
+	suite.Equal(metricsTemplate, encoded)
+	suite.NotNil(encoded)
+}
+
+func (suite *TestLibSuite) TestCounter() {
+	context, err := NewCMTContext()
+	suite.Nil(err)
+	suite.NotNil(context)
+
+	counter, err := context.NewCounter("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	err = counter.Set(time.Now(), 1, nil)
+	suite.Nil(err)
+
+	val, err := counter.GetValue(nil)
+	suite.Nil(err)
+	suite.Equal(1.0, val)
+
+	err = counter.Increment(time.Now(), nil)
+	suite.Nil(err)
+
+	val, err = counter.GetValue(nil)
+	suite.Nil(err)
+	suite.Equal(2.0, val)
 
 	context.Destroy()
 }

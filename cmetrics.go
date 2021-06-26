@@ -7,6 +7,7 @@ package cmetrics
 #include <cmetrics/cmetrics.h>
 #include <cmetrics/cmt_gauge.h>
 #include <cmetrics/cmt_encode_prometheus.h>
+#include <cmetrics/cmt_counter.h>
 
 */
 import "C"
@@ -22,6 +23,10 @@ type CMTContext struct {
 
 type CMTGauge struct {
 	gauge *C.struct_cmt_gauge
+}
+
+type CMTCounter struct {
+	counter *C.struct_cmt_counter
 }
 
 func GoStringArrayToCptr(arr []string) **C.char {
@@ -113,6 +118,60 @@ func (ctx *CMTContext) NewGauge(namespace, subsystem, name, help string, labelKe
 	}
 	return &CMTGauge{gauge}, nil
 }
+
+func (g *CMTCounter) Add(ts time.Time, value float64, labels []string) error {
+	ret := C.cmt_counter_add(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	if ret != 0 {
+		return fmt.Errorf("cannot substract counter value")
+	}
+	return nil
+}
+
+func (g *CMTCounter) Increment(ts time.Time, labels []string) error {
+	ret := C.cmt_counter_inc(g.counter, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	if ret != 0 {
+		return fmt.Errorf("cannot increment counter value")
+	}
+	return nil
+}
+
+func (g *CMTCounter) GetValue(labels []string) (float64, error) {
+	var value C.double
+	ret := C.cmt_counter_get_val(
+		g.counter,
+		C.int(len(labels)),
+		GoStringArrayToCptr(labels),
+		&value)
+
+	if ret != 0 {
+		return -1, fmt.Errorf("cannot get value for counter")
+	}
+	return float64(value), nil
+}
+
+func (g *CMTCounter) Set(ts time.Time, value float64, labels []string) error {
+	ret := C.cmt_counter_set(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	if ret != 0 {
+		return fmt.Errorf("cannot set counter value")
+	}
+	return nil
+}
+
+func (ctx *CMTContext) NewCounter(namespace, subsystem, name, help string, labelKeys []string) (*CMTCounter, error) {
+	counter := C.cmt_counter_create(ctx.context,
+		C.CString(namespace),
+		C.CString(subsystem),
+		C.CString(name),
+		C.CString(help),
+		C.int(len(labelKeys)),
+		GoStringArrayToCptr(labelKeys),
+	)
+	if counter == nil {
+		return nil, fmt.Errorf("cannot create counter")
+	}
+	return &CMTCounter{counter}, nil
+}
+
 
 func (ctx *CMTContext) Destroy() {
 	C.cmt_destroy(ctx.context)
