@@ -30,6 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      # Todo, fix dependencies to be fetched from github artifacts.
+      - name: Dependencies
+        run: sudo dpkg -i external/*.deb
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
