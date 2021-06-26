@@ -1,10 +1,22 @@
-![CI](https://github.com/calyptia/cmetrics-go/actions/workflows/go.yml/badge.svg?branch=master) 
-[![Go Documentation](https://pkg.go.dev/badge/github.com/calyptia/cmetrics-go.svg)](https://pkg.go.dev/github.com/calyptia/cmetrics-go)
+# CMetrics Golang
 
-## cmetrics-go
+[![CI](https://github.com/calyptia/cmetrics-go/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/calyptia/cmetrics-go/actions/workflows/go.yml)
 
-Golang bindings for the cmetrics library https://github.com/calyptia/cmetrics-go
+Golang bindings for [cmetrics](https://github.com/calyptia/cmetrics) library.
 
-## building
+## Installation
 
-*Requirement*: install the cmetrics library master build deb/rpm. Latest builds can be found [here](https://github.com/calyptia/cmetrics/actions/runs/972646485).
+*Requirement*: Install the debian/rpm dependencies from [here](https://github.com/calyptia/cmetrics/actions/runs/972646485)
+then import this into your go path:
+
+```shell
+go get -u github.com/calyptia/cmetrics-go
+```
+
+## Usage
+
+Please check the test files for examples on how to use the library. [Test examples](cmetrics_test.go)
+
+## Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/calyptia/cmetrics-go.
