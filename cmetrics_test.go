@@ -29,7 +29,7 @@ func (suite *TestLibSuite) TestLabels() {
 	suite.NotNil(gauge)
 
 	/* Default value for hash zero */
-	value, err := gauge.GetValue(0, nil)
+	value, err := gauge.GetValue( nil)
 	suite.Nil(err)
 	suite.Equal(0.0, value)
 
@@ -40,7 +40,7 @@ func (suite *TestLibSuite) TestLabels() {
 	err = gauge.Add(ts, 2.0, nil)
 	suite.Nil(err)
 
-	value, err = gauge.GetValue(0, nil)
+	value, err = gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Equal(3.0, value)
 	/*
@@ -51,7 +51,7 @@ func (suite *TestLibSuite) TestLabels() {
 	err = gauge.Increment(ts, []string{"localhost", "cmetrics"})
 	suite.Nil(err)
 
-	value, err = gauge.GetValue(2, []string{"localhost", "cmetrics"})
+	value, err = gauge.GetValue([]string{"localhost", "cmetrics"})
 	suite.Nil(err)
 	suite.Equal(1.0, value)
 
@@ -59,14 +59,14 @@ func (suite *TestLibSuite) TestLabels() {
 	err = gauge.Add(ts, 10, []string{"localhost", "test"})
 	suite.Nil(err)
 
-	value, err = gauge.GetValue(2, []string{"localhost", "test"})
+	value, err = gauge.GetValue([]string{"localhost", "test"})
 	suite.Nil(err)
 	suite.Equal(10.00, value)
 
 	err = gauge.Subtract(ts, 2.5, []string{"localhost", "test"})
 	suite.Nil(err)
 
-	value, err = gauge.GetValue(2, []string{"localhost", "test"})
+	value, err = gauge.GetValue([]string{"localhost", "test"})
 	suite.Nil(err)
 	suite.Equal(7.5, value)
 
@@ -96,28 +96,28 @@ func (suite *TestLibSuite) TestGauge() {
 	err = gauge.Set(time.Now(), 1, nil)
 	suite.Nil(err)
 
-	val, err := gauge.GetValue(0, nil)
+	val, err := gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Equal(1.0, val)
 
 	err = gauge.Increment(time.Now(), nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue(0, nil)
+	val, err = gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Equal(2.0, val)
 
 	err = gauge.Subtract(time.Now(), 1, nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue(0, nil)
+	val, err = gauge.GetValue( nil)
 	suite.Nil(err)
 	suite.Equal(1.0, val)
 
 	err = gauge.Decrement(time.Now(), nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue(0, nil)
+	val, err = gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Zero(val)
 
