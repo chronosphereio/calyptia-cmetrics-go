@@ -17,6 +17,7 @@ func (suite *TestLibSuite) TestContext() {
 	suite.NotNil(context)
 	context.Destroy()
 }
+
 func (suite *TestLibSuite) TestGaugeLabels() {
 	context, err := NewCMTContext()
 	suite.Nil(err)
