@@ -8,6 +8,3 @@ Golang bindings for the cmetrics library https://github.com/calyptia/cmetrics-go
 ## building
 
 *Requirement*: install the cmetrics library master build deb/rpm. Latest builds can be found [here](https://github.com/calyptia/cmetrics/actions/runs/972646485).
-
-
-```
