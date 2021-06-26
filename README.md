@@ -1,4 +1,4 @@
-![CI](https://github.com/calyptia/cmetrics-go/actions/workflows/go.yaml/badge.svg?branch=master) 
+![CI](https://github.com/calyptia/cmetrics-go/actions/workflows/go.yml/badge.svg?branch=master) 
 [![Go Documentation](https://pkg.go.dev/badge/github.com/calyptia/cmetrics-go.svg)](https://pkg.go.dev/github.com/calyptia/cmetrics-go)
 
 ## cmetrics-go
