@@ -22,7 +22,7 @@ func (suite *TestLibSuite) TestGauge() {
 	suite.Nil(err)
 	suite.NotNil(context)
 
-	gauge, err := context.NewGauge("kubernetes", "network", "load", "Network load",  []string{"hostname", "app"})
+	gauge, err := context.NewGauge("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
 	suite.Nil(err)
 	suite.NotNil(gauge)
 
@@ -40,7 +40,7 @@ func (suite *TestLibSuite) TestGauge() {
 	suite.Nil(err)
 	suite.Equal(2.0, val)
 
-	err = gauge.Subtract(time.Now(), 1,nil)
+	err = gauge.Subtract(time.Now(), 1, nil)
 	suite.Nil(err)
 
 	val, err = gauge.GetValue(0, nil)
