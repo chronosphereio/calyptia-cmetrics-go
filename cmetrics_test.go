@@ -29,7 +29,7 @@ func (suite *TestLibSuite) TestGaugeLabels() {
 	suite.NotNil(gauge)
 
 	/* Default value for hash zero */
-	value, err := gauge.GetValue( nil)
+	value, err := gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Equal(0.0, value)
 
@@ -110,7 +110,7 @@ func (suite *TestLibSuite) TestGauge() {
 	err = gauge.Subtract(time.Now(), 1, nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue( nil)
+	val, err = gauge.GetValue(nil)
 	suite.Nil(err)
 	suite.Equal(1.0, val)
 
@@ -136,7 +136,7 @@ func (suite *TestLibSuite) TestCounterLabels() {
 	suite.NotNil(counter)
 
 	/* Default value for hash zero */
-	value, err := counter.GetValue( nil)
+	value, err := counter.GetValue(nil)
 	suite.Nil(err)
 	suite.Equal(0.0, value)
 

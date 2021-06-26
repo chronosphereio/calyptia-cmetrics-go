@@ -172,7 +172,6 @@ func (ctx *CMTContext) NewCounter(namespace, subsystem, name, help string, label
 	return &CMTCounter{counter}, nil
 }
 
-
 func (ctx *CMTContext) Destroy() {
 	C.cmt_destroy(ctx.context)
 }
