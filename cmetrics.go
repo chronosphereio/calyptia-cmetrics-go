@@ -7,8 +7,9 @@ package cmetrics
 #include <cmetrics/cmetrics.h>
 #include <cmetrics/cmt_gauge.h>
 #include <cmetrics/cmt_encode_prometheus.h>
+#include <cmetrics/cmt_encode_msgpack.h>
+#include <cmetrics/cmt_encode_text.h>
 #include <cmetrics/cmt_counter.h>
-
 */
 import "C"
 import (
@@ -36,9 +37,8 @@ func GoStringArrayToCptr(arr []string) **C.char {
 
 	for i := 0; i < len(arr); i++ {
 		element := (**C.char)(unsafe.Pointer(uintptr(ptr) + uintptr(i)*unsafe.Sizeof((*C.char)(nil))))
-		*element = C.CString(string(arr[i]))
+		*element = C.CString(arr[i])
 	}
-
 	return (**C.char)(ptr)
 }
 
@@ -50,7 +50,7 @@ func (g *CMTGauge) Add(ts time.Time, value float64, labels []string) error {
 	return nil
 }
 
-func (g *CMTGauge) Increment(ts time.Time, labels []string) error {
+func (g *CMTGauge) Inc(ts time.Time, labels []string) error {
 	ret := C.cmt_gauge_inc(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return fmt.Errorf("cannot increment gauge value")
@@ -58,7 +58,7 @@ func (g *CMTGauge) Increment(ts time.Time, labels []string) error {
 	return nil
 }
 
-func (g *CMTGauge) Decrement(ts time.Time, labels []string) error {
+func (g *CMTGauge) Dec(ts time.Time, labels []string) error {
 	ret := C.cmt_gauge_dec(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return fmt.Errorf("cannot decrement gauge value")
@@ -66,7 +66,7 @@ func (g *CMTGauge) Decrement(ts time.Time, labels []string) error {
 	return nil
 }
 
-func (g *CMTGauge) Subtract(ts time.Time, value float64, labels []string) error {
+func (g *CMTGauge) Sub(ts time.Time, value float64, labels []string) error {
 	ret := C.cmt_gauge_sub(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return fmt.Errorf("cannot substract gauge value")
@@ -74,7 +74,7 @@ func (g *CMTGauge) Subtract(ts time.Time, value float64, labels []string) error 
 	return nil
 }
 
-func (g *CMTGauge) GetValue(labels []string) (float64, error) {
+func (g *CMTGauge) GetVal(labels []string) (float64, error) {
 	var value C.double
 	ret := C.cmt_gauge_get_val(
 		g.gauge,
@@ -96,7 +96,7 @@ func (g *CMTGauge) Set(ts time.Time, value float64, labels []string) error {
 	return nil
 }
 
-func (ctx *CMTContext) PrometheusEncode() (string, error) {
+func (ctx *CMTContext) EncodePrometheus() (string, error) {
 	ret := C.cmt_encode_prometheus_create(ctx.context, 1)
 	if ret == nil {
 		return "", fmt.Errorf("error encoding to prometheus format")
@@ -104,7 +104,28 @@ func (ctx *CMTContext) PrometheusEncode() (string, error) {
 	return C.GoString(ret), nil
 }
 
-func (ctx *CMTContext) NewGauge(namespace, subsystem, name, help string, labelKeys []string) (*CMTGauge, error) {
+func (ctx *CMTContext) EncodeText() (string, error) {
+	buffer := C.cmt_encode_text_create(ctx.context)
+	if buffer == nil {
+		return "", fmt.Errorf("error encoding to text format")
+	}
+	var text string = C.GoString(buffer)
+	C.cmt_sds_destroy(buffer)
+	return text, nil
+}
+
+func (ctx *CMTContext) EncodeMsgPack() (string, error) {
+	var buffer string
+	var cBuffer = C.CString(buffer)
+	var size = C.size_t(len(buffer))
+	ret := C.cmt_encode_msgpack(ctx.context, &cBuffer, (*C.size_t)(unsafe.Pointer(&size)))
+	if ret != 0 {
+		return "", fmt.Errorf("error encoding to msgpack format")
+	}
+	return C.GoString(cBuffer), nil
+}
+
+func (ctx *CMTContext) GaugeCreate(namespace, subsystem, name, help string, labelKeys []string) (*CMTGauge, error) {
 	gauge := C.cmt_gauge_create(ctx.context,
 		C.CString(namespace),
 		C.CString(subsystem),
@@ -127,15 +148,15 @@ func (g *CMTCounter) Add(ts time.Time, value float64, labels []string) error {
 	return nil
 }
 
-func (g *CMTCounter) Increment(ts time.Time, labels []string) error {
+func (g *CMTCounter) Inc(ts time.Time, labels []string) error {
 	ret := C.cmt_counter_inc(g.counter, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
-		return fmt.Errorf("cannot increment counter value")
+		return fmt.Errorf("cannot Inc counter value")
 	}
 	return nil
 }
 
-func (g *CMTCounter) GetValue(labels []string) (float64, error) {
+func (g *CMTCounter) GetVal(labels []string) (float64, error) {
 	var value C.double
 	ret := C.cmt_counter_get_val(
 		g.counter,
@@ -157,7 +178,7 @@ func (g *CMTCounter) Set(ts time.Time, value float64, labels []string) error {
 	return nil
 }
 
-func (ctx *CMTContext) NewCounter(namespace, subsystem, name, help string, labelKeys []string) (*CMTCounter, error) {
+func (ctx *CMTContext) CounterCreate(namespace, subsystem, name, help string, labelKeys []string) (*CMTCounter, error) {
 	counter := C.cmt_counter_create(ctx.context,
 		C.CString(namespace),
 		C.CString(subsystem),
