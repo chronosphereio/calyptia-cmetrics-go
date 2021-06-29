@@ -25,34 +25,33 @@ func (suite *TestLibSuite) TestGaugeLabels() {
 
 	ts := time.Now()
 
-	gauge, err := context.NewGauge("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	gauge, err := context.GaugeCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
 	suite.Nil(err)
 	suite.NotNil(gauge)
 
 	/* Default value for hash zero */
-	value, err := gauge.GetValue(nil)
-	suite.Nil(err)
-	suite.Equal(0.0, value)
+	_, err = gauge.GetVal(nil)
+	suite.NotNil(err)
 
-	/* Increment hash zero by 1 */
-	err = gauge.Increment(ts, nil)
+	/* Inc hash zero by 1 */
+	err = gauge.Inc(ts, nil)
 	suite.Nil(err)
 
 	err = gauge.Add(ts, 2.0, nil)
 	suite.Nil(err)
 
-	value, err = gauge.GetValue(nil)
+	value, err := gauge.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(3.0, value)
 	/*
 	 * Test 2: custom labels
 	 * ---------------------
 	 */
-	/* Increment custom metric */
-	err = gauge.Increment(ts, []string{"localhost", "cmetrics"})
+	/* Inc custom metric */
+	err = gauge.Inc(ts, []string{"localhost", "cmetrics"})
 	suite.Nil(err)
 
-	value, err = gauge.GetValue([]string{"localhost", "cmetrics"})
+	value, err = gauge.GetVal([]string{"localhost", "cmetrics"})
 	suite.Nil(err)
 	suite.Equal(1.0, value)
 
@@ -60,18 +59,18 @@ func (suite *TestLibSuite) TestGaugeLabels() {
 	err = gauge.Add(ts, 10, []string{"localhost", "test"})
 	suite.Nil(err)
 
-	value, err = gauge.GetValue([]string{"localhost", "test"})
+	value, err = gauge.GetVal([]string{"localhost", "test"})
 	suite.Nil(err)
 	suite.Equal(10.00, value)
 
-	err = gauge.Subtract(ts, 2.5, []string{"localhost", "test"})
+	err = gauge.Sub(ts, 2.5, []string{"localhost", "test"})
 	suite.Nil(err)
 
-	value, err = gauge.GetValue([]string{"localhost", "test"})
+	value, err = gauge.GetVal([]string{"localhost", "test"})
 	suite.Nil(err)
 	suite.Equal(7.5, value)
 
-	encoded, err := context.PrometheusEncode()
+	encoded, err := context.EncodePrometheus()
 	suite.Nil(err)
 
 	metricsTemplate := fmt.Sprintf(`# HELP kubernetes_network_load Network load
@@ -90,35 +89,35 @@ func (suite *TestLibSuite) TestGauge() {
 	suite.Nil(err)
 	suite.NotNil(context)
 
-	gauge, err := context.NewGauge("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	gauge, err := context.GaugeCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
 	suite.Nil(err)
 	suite.NotNil(gauge)
 
 	err = gauge.Set(time.Now(), 1, nil)
 	suite.Nil(err)
 
-	val, err := gauge.GetValue(nil)
+	val, err := gauge.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(1.0, val)
 
-	err = gauge.Increment(time.Now(), nil)
+	err = gauge.Inc(time.Now(), nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue(nil)
+	val, err = gauge.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(2.0, val)
 
-	err = gauge.Subtract(time.Now(), 1, nil)
+	err = gauge.Sub(time.Now(), 1, nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue(nil)
+	val, err = gauge.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(1.0, val)
 
-	err = gauge.Decrement(time.Now(), nil)
+	err = gauge.Dec(time.Now(), nil)
 	suite.Nil(err)
 
-	val, err = gauge.GetValue(nil)
+	val, err = gauge.GetVal(nil)
 	suite.Nil(err)
 	suite.Zero(val)
 
@@ -132,34 +131,33 @@ func (suite *TestLibSuite) TestCounterLabels() {
 
 	ts := time.Now()
 
-	counter, err := context.NewCounter("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	counter, err := context.CounterCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
 	suite.Nil(err)
 	suite.NotNil(counter)
 
 	/* Default value for hash zero */
-	value, err := counter.GetValue(nil)
-	suite.Nil(err)
-	suite.Equal(0.0, value)
+	_, err = counter.GetVal(nil)
+	suite.NotNil(err)
 
-	/* Increment hash zero by 1 */
-	err = counter.Increment(ts, nil)
+	/* Inc hash zero by 1 */
+	err = counter.Inc(ts, nil)
 	suite.Nil(err)
 
 	err = counter.Add(ts, 2.0, nil)
 	suite.Nil(err)
 
-	value, err = counter.GetValue(nil)
+	value, err := counter.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(3.0, value)
 	/*
 	 * Test 2: custom labels
 	 * ---------------------
 	 */
-	/* Increment custom metric */
-	err = counter.Increment(ts, []string{"localhost", "cmetrics"})
+	/* Inc custom metric */
+	err = counter.Inc(ts, []string{"localhost", "cmetrics"})
 	suite.Nil(err)
 
-	value, err = counter.GetValue([]string{"localhost", "cmetrics"})
+	value, err = counter.GetVal([]string{"localhost", "cmetrics"})
 	suite.Nil(err)
 	suite.Equal(1.0, value)
 
@@ -167,11 +165,11 @@ func (suite *TestLibSuite) TestCounterLabels() {
 	err = counter.Add(ts, 10, []string{"localhost", "test"})
 	suite.Nil(err)
 
-	value, err = counter.GetValue([]string{"localhost", "test"})
+	value, err = counter.GetVal([]string{"localhost", "test"})
 	suite.Nil(err)
 	suite.Equal(10.00, value)
 
-	encoded, err := context.PrometheusEncode()
+	encoded, err := context.EncodePrometheus()
 	suite.Nil(err)
 
 	metricsTemplate := fmt.Sprintf(`# HELP kubernetes_network_load Network load
@@ -183,6 +181,15 @@ kubernetes_network_load{hostname="localhost",app="test"} 10 %[1]v
 
 	suite.Equal(metricsTemplate, encoded)
 	suite.NotNil(encoded)
+
+	encoded, err = context.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(encoded)
+
+	encoded, err = context.EncodeText()
+	suite.Nil(err)
+	suite.NotNil(encoded)
+
 }
 
 func (suite *TestLibSuite) TestCounter() {
@@ -190,23 +197,43 @@ func (suite *TestLibSuite) TestCounter() {
 	suite.Nil(err)
 	suite.NotNil(context)
 
-	counter, err := context.NewCounter("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	ts := time.Now()
+	counter, err := context.CounterCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
 	suite.Nil(err)
 	suite.NotNil(counter)
 
-	err = counter.Set(time.Now(), 1, nil)
+	err = counter.Set(ts, 1, nil)
 	suite.Nil(err)
 
-	val, err := counter.GetValue(nil)
+	val, err := counter.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(1.0, val)
 
-	err = counter.Increment(time.Now(), nil)
+	err = counter.Inc(ts, nil)
 	suite.Nil(err)
 
-	val, err = counter.GetValue(nil)
+	val, err = counter.GetVal(nil)
 	suite.Nil(err)
 	suite.Equal(2.0, val)
+
+	encoded, err := context.EncodePrometheus()
+	suite.Nil(err)
+
+	metricsTemplate := fmt.Sprintf(`# HELP kubernetes_network_load Network load
+# TYPE kubernetes_network_load counter
+kubernetes_network_load 2 %[1]v
+`, ts.UnixNano()/int64(time.Millisecond))
+
+	suite.Equal(metricsTemplate, encoded)
+	suite.NotNil(encoded)
+
+	encoded, err = context.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(encoded)
+
+	encoded, err = context.EncodeText()
+	suite.Nil(err)
+	suite.NotNil(encoded)
 
 	context.Destroy()
 }
