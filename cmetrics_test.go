@@ -2,6 +2,7 @@ package cmetrics
 
 import (
 	"fmt"
+	"github.com/influxdata/influxdb/models"
 	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
@@ -189,6 +190,43 @@ kubernetes_network_load{hostname="localhost",app="test"} 10 %[1]v
 	encoded, err = context.EncodeText()
 	suite.Nil(err)
 	suite.NotNil(encoded)
+	encoded, err = context.EncodeInflux()
+	suite.Nil(err)
+	suite.NotNil(encoded)
+}
+
+func (suite *TestLibSuite) TestInfluxEncoding() {
+	context, err := NewCMTContext()
+	suite.Nil(err)
+	suite.NotNil(context)
+
+	ts := time.Now()
+	counter, err := context.CounterCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	err = counter.Set(ts, 1, nil)
+	suite.Nil(err)
+
+	var TestTags = []string{"tag1", "tag2"}
+
+	for _, tag := range TestTags {
+		err = context.LabelAdd(tag, "value")
+		suite.Nil(err)
+	}
+
+	encoded, err := context.EncodeInflux()
+	suite.Nil(err)
+
+	points, err := models.ParsePointsString(encoded)
+	suite.Nil(err)
+	for _, point := range points {
+		fields, _ := point.Fields()
+		suite.Equal(1.0, fields["load"])
+		for _, tag := range TestTags {
+			suite.True(point.HasTag([]byte(tag)))
+		}
+	}
 
 }
 
@@ -235,6 +273,16 @@ kubernetes_network_load 2 %[1]v
 	suite.Nil(err)
 	suite.NotNil(encoded)
 
+	err = context.LabelAdd("key", "value")
+	suite.Nil(err)
+
+	encoded, err = context.EncodeText()
+	suite.Nil(err)
+	suite.Contains(encoded, "key")
+
+	encoded, err = context.EncodeInflux()
+	suite.Nil(err)
+	suite.NotNil(encoded)
 	context.Destroy()
 }
 
