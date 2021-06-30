@@ -9,6 +9,7 @@ package cmetrics
 #include <cmetrics/cmt_encode_prometheus.h>
 #include <cmetrics/cmt_encode_msgpack.h>
 #include <cmetrics/cmt_encode_text.h>
+#include <cmetrics/cmt_encode_influx.h>
 #include <cmetrics/cmt_counter.h>
 */
 import "C"
@@ -96,6 +97,14 @@ func (g *CMTGauge) Set(ts time.Time, value float64, labels []string) error {
 	return nil
 }
 
+func (ctx *CMTContext) LabelAdd(key, val string) error {
+	ret := C.cmt_labels_add_kv(ctx.context.static_labels, C.CString(key), C.CString(val))
+	if ret != 0 {
+		return fmt.Errorf("cannot set k:%s to value:%s", key, val)
+	}
+	return nil
+}
+
 func (ctx *CMTContext) EncodePrometheus() (string, error) {
 	ret := C.cmt_encode_prometheus_create(ctx.context, 1)
 	if ret == nil {
@@ -111,6 +120,16 @@ func (ctx *CMTContext) EncodeText() (string, error) {
 	}
 	var text string = C.GoString(buffer)
 	C.cmt_sds_destroy(buffer)
+	return text, nil
+}
+
+func (ctx *CMTContext) EncodeInflux() (string, error) {
+	buffer := C.cmt_encode_influx_create(ctx.context)
+	if buffer == nil {
+		return "", fmt.Errorf("error encoding to text format")
+	}
+	var text string = C.GoString(buffer)
+	C.cmt_encode_influx_destroy(buffer)
 	return text, nil
 }
 
