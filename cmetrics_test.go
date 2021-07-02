@@ -13,14 +13,14 @@ type TestLibSuite struct {
 }
 
 func (suite *TestLibSuite) TestContext() {
-	context, err := NewCMTContext()
+	context, err := NewContext()
 	suite.Nil(err)
 	suite.NotNil(context)
 	context.Destroy()
 }
 
 func (suite *TestLibSuite) TestGaugeLabels() {
-	context, err := NewCMTContext()
+	context, err := NewContext()
 	suite.Nil(err)
 	suite.NotNil(context)
 
@@ -86,7 +86,7 @@ kubernetes_network_load{hostname="localhost",app="test"} 7.5 %[1]v
 }
 
 func (suite *TestLibSuite) TestGauge() {
-	context, err := NewCMTContext()
+	context, err := NewContext()
 	suite.Nil(err)
 	suite.NotNil(context)
 
@@ -126,7 +126,7 @@ func (suite *TestLibSuite) TestGauge() {
 }
 
 func (suite *TestLibSuite) TestCounterLabels() {
-	context, err := NewCMTContext()
+	context, err := NewContext()
 	suite.Nil(err)
 	suite.NotNil(context)
 
@@ -183,9 +183,9 @@ kubernetes_network_load{hostname="localhost",app="test"} 10 %[1]v
 	suite.Equal(metricsTemplate, encoded)
 	suite.NotNil(encoded)
 
-	encoded, err = context.EncodeMsgPack()
+	encodedb, err := context.EncodeMsgPack()
 	suite.Nil(err)
-	suite.NotNil(encoded)
+	suite.NotNil(encodedb)
 
 	encoded, err = context.EncodeText()
 	suite.Nil(err)
@@ -196,7 +196,7 @@ kubernetes_network_load{hostname="localhost",app="test"} 10 %[1]v
 }
 
 func (suite *TestLibSuite) TestInfluxEncoding() {
-	context, err := NewCMTContext()
+	context, err := NewContext()
 	suite.Nil(err)
 	suite.NotNil(context)
 
@@ -227,11 +227,78 @@ func (suite *TestLibSuite) TestInfluxEncoding() {
 			suite.True(point.HasTag([]byte(tag)))
 		}
 	}
+}
 
+func (suite *TestLibSuite) TestNewContextFromMsgPack() {
+	context, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context)
+
+	ts := time.Now()
+	counter, err := context.CounterCreate("test1", "wired", "buffer", "a test", []string{"calyptia1", "cmetrics1"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	err = counter.Inc(ts, nil)
+	suite.Nil(err)
+
+	gauge, err := context.GaugeCreate("test1", "wired", "buffer", "a test", []string{"calyptia2", "cmetrics2"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Set(ts, 2, nil)
+	suite.Nil(err)
+
+	gauge, err = context.GaugeCreate("test2", "wired", "buffer", "a test", []string{"calyptia2", "cmetrics2"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Set(ts, 1, nil)
+	suite.Nil(err)
+
+	contextInfluxEncoded, err := context.Encode(InfluxEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(contextInfluxEncoded)
+
+	contextTextEncoded, err := context.Encode(TextEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(contextTextEncoded)
+
+	contextPrometheusEncoded, err := context.Encode(PrometheusEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(contextPrometheusEncoded)
+
+	msgPackBuffer, err := context.Encode(MsgPackEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(msgPackBuffer)
+
+	newContext, err := NewContextFromMsgPack(msgPackBuffer.([]byte))
+	suite.Nil(err)
+	suite.NotNil(newContext)
+
+	newContextInfluxEncoded, err := newContext.Encode(InfluxEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(newContextInfluxEncoded)
+	suite.Equal(newContextInfluxEncoded, contextInfluxEncoded)
+
+	newContextTextEncoded, err := newContext.Encode(TextEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(newContextTextEncoded)
+	suite.Equal(newContextTextEncoded, contextTextEncoded)
+
+	newContextPrometheusEncoded, err := newContext.Encode(PrometheusEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(newContextPrometheusEncoded)
+	suite.Equal(newContextPrometheusEncoded, contextPrometheusEncoded)
+
+	newContextMsgPackEncoded, err := newContext.Encode(MsgPackEncoder)
+	suite.Nil(err)
+	suite.NotEmpty(newContextMsgPackEncoded)
+	suite.Equal(newContextMsgPackEncoded.([]byte), msgPackBuffer)
 }
 
 func (suite *TestLibSuite) TestCounter() {
-	context, err := NewCMTContext()
+	context, err := NewContext()
 	suite.Nil(err)
 	suite.NotNil(context)
 
@@ -265,9 +332,9 @@ kubernetes_network_load 2 %[1]v
 	suite.Equal(metricsTemplate, encoded)
 	suite.NotNil(encoded)
 
-	encoded, err = context.EncodeMsgPack()
+	encodedb, err := context.EncodeMsgPack()
 	suite.Nil(err)
-	suite.NotNil(encoded)
+	suite.NotNil(encodedb)
 
 	encoded, err = context.EncodeText()
 	suite.Nil(err)
