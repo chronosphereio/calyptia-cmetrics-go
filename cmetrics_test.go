@@ -187,12 +187,12 @@ kubernetes_network_load{hostname="localhost",app="test"} 10 %[1]v
 	suite.Nil(err)
 	suite.NotNil(encodedb)
 
-	encoded, err = context.EncodeText()
+	encodedBytes, err := context.EncodeText()
 	suite.Nil(err)
-	suite.NotNil(encoded)
-	encoded, err = context.EncodeInflux()
+	suite.NotNil(encodedBytes)
+	encodedBytes, err = context.EncodeInflux()
 	suite.Nil(err)
-	suite.NotNil(encoded)
+	suite.NotNil(encodedBytes)
 }
 
 func (suite *TestLibSuite) TestInfluxEncoding() {
@@ -272,7 +272,7 @@ func (suite *TestLibSuite) TestNewContextFromMsgPack() {
 	suite.Nil(err)
 	suite.NotEmpty(msgPackBuffer)
 
-	newContext, err := NewContextFromMsgPack(msgPackBuffer.([]byte))
+	newContext, err := NewContextFromMsgPack(msgPackBuffer.([]byte), 0)
 	suite.Nil(err)
 	suite.NotNil(newContext)
 
@@ -336,20 +336,20 @@ kubernetes_network_load 2 %[1]v
 	suite.Nil(err)
 	suite.NotNil(encodedb)
 
-	encoded, err = context.EncodeText()
+	encodedBytes, err := context.EncodeText()
 	suite.Nil(err)
-	suite.NotNil(encoded)
+	suite.NotNil(encodedBytes)
 
 	err = context.LabelAdd("key", "value")
 	suite.Nil(err)
 
-	encoded, err = context.EncodeText()
+	encodedBytes, err = context.EncodeText()
 	suite.Nil(err)
-	suite.Contains(encoded, "key")
+	suite.Contains(encodedBytes, "key")
 
-	encoded, err = context.EncodeInflux()
+	encodedBytes, err = context.EncodeInflux()
 	suite.Nil(err)
-	suite.NotNil(encoded)
+	suite.NotNil(encodedBytes)
 	context.Destroy()
 }
 

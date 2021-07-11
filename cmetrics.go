@@ -134,14 +134,16 @@ func (ctx *Context) EncodeInflux() (string, error) {
 	return text, nil
 }
 
-func NewContextFromMsgPack(msgPackBuffer []byte) (*Context, error) {
+func NewContextFromMsgPack(msgPackBuffer []byte, offset int64) (*Context, error) {
 	var cBuffer *C.char
+	var cOffset *C.ulong
 	ct, err := NewContext()
 	if err != nil {
 		return nil, err
 	}
 	cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
-	ret := C.cmt_decode_msgpack(&ct.context, unsafe.Pointer(cBuffer), C.ulong(len(msgPackBuffer)))
+	cOffset = (*C.ulong)(unsafe.Pointer(&offset))
+	ret := C.cmt_decode_msgpack_create(&ct.context, cBuffer, C.ulong(len(msgPackBuffer)), cOffset)
 	if ret != 0 {
 		return nil, errors.New("error decoding msgpack")
 	}
@@ -183,7 +185,7 @@ func (ctx *Context) EncodeMsgPack() ([]byte, error) {
 	var buffer *C.char
 	var bufferSize C.size_t
 
-	ret := C.cmt_encode_msgpack(ctx.context, &buffer, &bufferSize)
+	ret := C.cmt_encode_msgpack_create(ctx.context, &buffer, &bufferSize)
 	if ret != 0 {
 		return nil, errors.New("error encoding to msgpack format")
 	}
