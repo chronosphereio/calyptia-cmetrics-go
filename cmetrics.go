@@ -134,6 +134,33 @@ func (ctx *Context) EncodeInflux() (string, error) {
 	return text, nil
 }
 
+func NewContextSetFromMsgPack(msgPackBuffer []byte) ([]*Context, error) {
+	var ret []*Context
+	var cBuffer *C.char
+	ct, err := NewContext()
+	if err != nil {
+		return nil, err
+	}
+	cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
+	var x = 0
+	for  x < len(msgPackBuffer)  {
+		r := C.cmt_decode_msgpack_create(&ct.context, cBuffer, C.ulong(len(msgPackBuffer)), (*C.ulong)(unsafe.Pointer(&x)))
+		if r == 0 {
+			ret = append(ret, ct)
+			ct, err = NewContext()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	if len(ret) == 0 {
+		return nil, errors.New("error decoding msgpack")
+	}
+
+	return ret, nil
+}
+
 func NewContextFromMsgPack(msgPackBuffer []byte, offset int64) (*Context, error) {
 	var cBuffer *C.char
 	var cOffset *C.ulong
@@ -189,7 +216,6 @@ func (ctx *Context) EncodeMsgPack() ([]byte, error) {
 	if ret != 0 {
 		return nil, errors.New("error encoding to msgpack format")
 	}
-
 	return C.GoBytes(unsafe.Pointer(buffer), C.int(bufferSize)), nil
 }
 
