@@ -19,6 +19,59 @@ func (suite *TestLibSuite) TestContext() {
 	context.Destroy()
 }
 
+func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
+	ts := time.Now()
+
+	context1, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context1)
+
+	gauge, err := context1.GaugeCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Add(ts, 1.0, nil)
+	suite.Nil(err)
+
+	context2, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context2)
+
+	gauge, err = context2.GaugeCreate("kubernetes", "network", "loads", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Add(ts, 100.0, nil)
+	suite.Nil(err)
+
+	buffer1, err := context1.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer1)
+
+	buffer2, err := context2.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer2)
+
+	buffer := append(buffer1, buffer2...)
+
+	contextSet, err := NewContextSetFromMsgPack(buffer)
+	suite.Nil(err)
+	suite.NotNil(contextSet)
+	suite.Equal(len(contextSet), 2)
+
+	buffer3, err := contextSet[0].EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer3)
+
+	buffer4, err := contextSet[1].EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer4)
+
+	suite.Equal(buffer3, buffer1)
+	suite.Equal(buffer4, buffer2)
+
+}
+
 func (suite *TestLibSuite) TestGaugeLabels() {
 	context, err := NewContext()
 	suite.Nil(err)
