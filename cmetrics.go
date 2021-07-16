@@ -134,31 +134,23 @@ func (ctx *Context) EncodeInflux() (string, error) {
 	return text, nil
 }
 
-func NewContextSetFromMsgPack(msgPackBuffer []byte) ([]*Context, error) {
-	var ret []*Context
+func NewContextSetFromMsgPack(msgPackBuffer []byte, offset int) ([]*Context, error) {
 	var cBuffer *C.char
-	ct, err := NewContext()
-	if err != nil {
-		return nil, err
-	}
 	cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
-	var x = 0
-	for  x < len(msgPackBuffer)  {
-		r := C.cmt_decode_msgpack_create(&ct.context, cBuffer, C.ulong(len(msgPackBuffer)), (*C.ulong)(unsafe.Pointer(&x)))
-		if r == 0 {
-			ret = append(ret, ct)
-			ct, err = NewContext()
-			if err != nil {
-				return nil, err
-			}
+	var ctxSet []*Context
+	var ret C.int
+	for ret == C.CMT_DECODE_MSGPACK_SUCCESS {
+		ct, err := NewContext()
+		if err != nil {
+			return nil, err
 		}
+		ret = C.cmt_decode_msgpack_create(&ct.context, cBuffer, C.ulong(len(msgPackBuffer)), (*C.ulong)(unsafe.Pointer(&offset)))
+		if ret == C.CMT_DECODE_MSGPACK_INSUFFICIENT_DATA {
+			break
+		}
+		ctxSet = append(ctxSet, ct)
 	}
-
-	if len(ret) == 0 {
-		return nil, errors.New("error decoding msgpack")
-	}
-
-	return ret, nil
+	return ctxSet, nil
 }
 
 func NewContextFromMsgPack(msgPackBuffer []byte, offset int64) (*Context, error) {

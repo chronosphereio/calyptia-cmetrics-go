@@ -54,7 +54,7 @@ func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
 
 	buffer := append(buffer1, buffer2...)
 
-	contextSet, err := NewContextSetFromMsgPack(buffer)
+	contextSet, err := NewContextSetFromMsgPack(buffer, 0)
 	suite.Nil(err)
 	suite.NotNil(contextSet)
 	suite.Equal(len(contextSet), 2)
