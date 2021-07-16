@@ -19,6 +19,104 @@ func (suite *TestLibSuite) TestContext() {
 	context.Destroy()
 }
 
+func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
+	ts := time.Now()
+
+	context1, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context1)
+
+	gauge, err := context1.GaugeCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Add(ts, 1.0, nil)
+	suite.Nil(err)
+
+	context2, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context2)
+
+	gauge, err = context2.GaugeCreate("kubernetes", "network", "loads", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Add(ts, 100.0, nil)
+	suite.Nil(err)
+
+	context3, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context3)
+
+	counter, err := context3.CounterCreate("kubernetes", "network", "loads", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	err = counter.Set(ts, 100.0, nil)
+	suite.Nil(err)
+
+	context4, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context4)
+
+	counter, err = context4.CounterCreate("kubernetes", "network", "loads", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	err = counter.Set(ts, 100.0, nil)
+	suite.Nil(err)
+
+	var buffer []byte
+
+	buffer1, err := context1.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer1)
+
+	buffer = append(buffer, buffer1...)
+
+	buffer2, err := context2.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer2)
+	buffer = append(buffer, buffer2...)
+
+	buffer3, err := context3.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer3)
+	buffer = append(buffer, buffer3...)
+
+	buffer4, err := context4.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer4)
+	buffer = append(buffer, buffer4...)
+
+	contextSet, err := NewContextSetFromMsgPack(buffer)
+	suite.Nil(err)
+	suite.NotNil(contextSet)
+	suite.Equal(len(contextSet), 4)
+
+	buffer5, err := contextSet[0].EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer5)
+
+	buffer6, err := contextSet[1].EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer6)
+
+	buffer7, err := contextSet[2].EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer5)
+
+	buffer8, err := contextSet[3].EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(buffer6)
+
+	suite.Equal(buffer5, buffer1)
+	suite.Equal(buffer6, buffer2)
+	suite.Equal(buffer7, buffer3)
+	suite.Equal(buffer8, buffer4)
+
+}
+
 func (suite *TestLibSuite) TestGaugeLabels() {
 	context, err := NewContext()
 	suite.Nil(err)
