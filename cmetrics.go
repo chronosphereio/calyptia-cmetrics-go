@@ -149,6 +149,11 @@ func NewContextSetFromMsgPack(msgPackBuffer []byte, offset int) ([]*Context, err
 		}
 		ctxSet = append(ctxSet, ct)
 	}
+
+	if len(ctxSet) == 0 {
+		return nil, errors.New("error decoding metric context(s)")
+	}
+
 	return ctxSet, nil
 }
 

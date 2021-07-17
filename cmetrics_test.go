@@ -19,6 +19,39 @@ func (suite *TestLibSuite) TestContext() {
 	context.Destroy()
 }
 
+func (suite *TestLibSuite) TestMultiContextFromMsgPackSingleContext() {
+	ts := time.Now()
+
+	context1, err := NewContext()
+	suite.Nil(err)
+	suite.NotNil(context1)
+
+	gauge, err := context1.GaugeCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Add(ts, 1.0, nil)
+	suite.Nil(err)
+
+	encoded, err := context1.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(encoded)
+
+	contextSet, err := NewContextSetFromMsgPack(encoded, 0)
+	suite.Nil(err)
+	suite.NotNil(contextSet)
+	suite.Len(contextSet, 1)
+
+	influxEncoded, err := contextSet[0].EncodeInflux()
+	suite.Nil(err)
+
+	points, err := models.ParsePointsString(influxEncoded)
+	suite.Nil(err)
+	suite.NotNil(points)
+	suite.Len(points, 1)
+
+}
+
 func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
 	ts := time.Now()
 
@@ -103,9 +136,6 @@ func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
 	suite.NotNil(contextSet)
 	suite.Equal(len(contextSet), 4)
 
-	//for _, context := range contextSet {
-	//	fmt.Println(string(context.EncodeMsgPack()))
-	//}
 
 	buffer5, err := contextSet[0].EncodeMsgPack()
 	suite.Nil(err)
