@@ -135,8 +135,7 @@ func (ctx *Context) EncodeInflux() (string, error) {
 }
 
 func NewContextSetFromMsgPack(msgPackBuffer []byte, offset int) ([]*Context, error) {
-	var cBuffer *C.char
-	cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
+	var cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
 	var ctxSet []*Context
 	var ret C.int
 	for ret == C.CMT_DECODE_MSGPACK_SUCCESS {
