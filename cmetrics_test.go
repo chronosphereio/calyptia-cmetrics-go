@@ -2,10 +2,11 @@ package cmetrics
 
 import (
 	"fmt"
-	"github.com/influxdata/influxdb/models"
-	"github.com/stretchr/testify/suite"
 	"testing"
 	"time"
+
+	"github.com/influxdata/influxdb/models"
+	"github.com/stretchr/testify/suite"
 )
 
 type TestLibSuite struct {
@@ -85,7 +86,6 @@ func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
 	err = gauge.Add(ts, 100.0, nil)
 	suite.Nil(err)
 
-
 	gauge, err = context3.GaugeCreate("kubernetes", "network", "loadss", "Network load", []string{"hostname", "app"})
 	suite.Nil(err)
 	suite.NotNil(gauge)
@@ -135,7 +135,6 @@ func (suite *TestLibSuite) TestMultiContextFromMsgPack() {
 	suite.Nil(err)
 	suite.NotNil(contextSet)
 	suite.Equal(len(contextSet), 4)
-
 
 	buffer5, err := contextSet[0].EncodeMsgPack()
 	suite.Nil(err)
