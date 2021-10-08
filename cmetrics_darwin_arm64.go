@@ -1,4 +1,4 @@
-// go:build (darwin && arm)
+//go:build darwin && arm64
 
 package cmetrics
 
