@@ -45,7 +45,7 @@ func GoStringArrayToCptr(arr []string) **C.char {
 }
 
 func (g *Gauge) Add(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_gauge_add(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_gauge_add(g.gauge, C.ulonglong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot substract gauge value")
 	}
@@ -53,7 +53,7 @@ func (g *Gauge) Add(ts time.Time, value float64, labels []string) error {
 }
 
 func (g *Gauge) Inc(ts time.Time, labels []string) error {
-	ret := C.cmt_gauge_inc(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_gauge_inc(g.gauge, C.ulonglong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot increment gauge value")
 	}
@@ -61,7 +61,7 @@ func (g *Gauge) Inc(ts time.Time, labels []string) error {
 }
 
 func (g *Gauge) Dec(ts time.Time, labels []string) error {
-	ret := C.cmt_gauge_dec(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_gauge_dec(g.gauge, C.ulonglong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot decrement gauge value")
 	}
@@ -69,7 +69,7 @@ func (g *Gauge) Dec(ts time.Time, labels []string) error {
 }
 
 func (g *Gauge) Sub(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_gauge_sub(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_gauge_sub(g.gauge, C.ulonglong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot subtract gauge value")
 	}
@@ -91,7 +91,7 @@ func (g *Gauge) GetVal(labels []string) (float64, error) {
 }
 
 func (g *Gauge) Set(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_gauge_set(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_gauge_set(g.gauge, C.ulonglong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot set gauge value")
 	}
@@ -231,7 +231,7 @@ func (ctx *Context) GaugeCreate(namespace, subsystem, name, help string, labelKe
 }
 
 func (g *Counter) Add(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_counter_add(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_counter_add(g.counter, C.ulonglong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot add counter value")
 	}
@@ -239,7 +239,7 @@ func (g *Counter) Add(ts time.Time, value float64, labels []string) error {
 }
 
 func (g *Counter) Inc(ts time.Time, labels []string) error {
-	ret := C.cmt_counter_inc(g.counter, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_counter_inc(g.counter, C.ulonglong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot Inc counter value")
 	}
@@ -261,7 +261,7 @@ func (g *Counter) GetVal(labels []string) (float64, error) {
 }
 
 func (g *Counter) Set(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_counter_set(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	ret := C.cmt_counter_set(g.counter, C.ulonglong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
 	if ret != 0 {
 		return errors.New("cannot set counter value")
 	}
