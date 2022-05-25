@@ -13,6 +13,15 @@ type TestLibSuite struct {
 	suite.Suite
 }
 
+func (suite *TestLibSuite) TestRawCMTPointer() {
+	cmt, err := NewRawCMTPointer()
+	suite.Nil(err)
+	context, err := NewContextFromCMTPointer(cmt)
+	suite.Nil(err)
+	suite.NotNil(context)
+	context.Destroy()
+}
+
 func (suite *TestLibSuite) TestContext() {
 	context, err := NewContext()
 	suite.Nil(err)
@@ -272,6 +281,55 @@ func (suite *TestLibSuite) TestGauge() {
 	context.Destroy()
 }
 
+func (suite *TestLibSuite) TestGaugeWithRawCMTPointer() {
+	cmt, err := NewRawCMTPointer()
+	suite.Nil(err)
+	context, err := NewContextFromCMTPointer(cmt)
+	suite.Nil(err)
+	suite.NotNil(context)
+
+	gauge, err := context.GaugeCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "app"})
+	suite.Nil(err)
+	suite.NotNil(gauge)
+
+	err = gauge.Set(time.Now(), 2, nil)
+	suite.Nil(err)
+
+	val, err := gauge.GetVal(nil)
+	suite.Nil(err)
+	suite.Equal(2.0, val)
+
+	err = gauge.Inc(time.Now(), nil)
+	suite.Nil(err)
+
+	val, err = gauge.GetVal(nil)
+	suite.Nil(err)
+	suite.Equal(3.0, val)
+
+	err = gauge.Sub(time.Now(), 1, nil)
+	suite.Nil(err)
+
+	val, err = gauge.GetVal(nil)
+	suite.Nil(err)
+	suite.Equal(2.0, val)
+
+	err = gauge.Dec(time.Now(), nil)
+	suite.Nil(err)
+
+	val, err = gauge.GetVal(nil)
+	suite.Nil(err)
+	suite.Equal(1.0, val)
+
+	err = gauge.Dec(time.Now(), nil)
+	suite.Nil(err)
+
+	val, err = gauge.GetVal(nil)
+	suite.Nil(err)
+	suite.Zero(val)
+
+	context.Destroy()
+}
+
 func (suite *TestLibSuite) TestCounterLabels() {
 	context, err := NewContext()
 	suite.Nil(err)
@@ -493,6 +551,64 @@ kubernetes_network_load 2 %[1]v
 	encodedBytes, err = context.EncodeText()
 	suite.Nil(err)
 	suite.Contains(encodedBytes, "key")
+
+	encodedBytes, err = context.EncodeInflux()
+	suite.Nil(err)
+	suite.NotNil(encodedBytes)
+	context.Destroy()
+}
+
+func (suite *TestLibSuite) TestCounterWithRawCMTPointer() {
+	cmt, err := NewRawCMTPointer()
+	suite.Nil(err)
+	context, err := NewContextFromCMTPointer(cmt)
+	suite.Nil(err)
+	suite.NotNil(context)
+
+	ts := time.Now()
+	counter, err := context.CounterCreate("kubernetes", "network", "load", "Network load", []string{"hostname", "application"})
+	suite.Nil(err)
+	suite.NotNil(counter)
+
+	err = counter.Set(ts, 2, nil)
+	suite.Nil(err)
+
+	val, err := counter.GetVal(nil)
+	suite.Nil(err)
+	suite.Equal(2.0, val)
+
+	err = counter.Inc(ts, nil)
+	suite.Nil(err)
+
+	val, err = counter.GetVal(nil)
+	suite.Nil(err)
+	suite.Equal(3.0, val)
+
+	encoded, err := context.EncodePrometheus()
+	suite.Nil(err)
+
+	metricsTemplate := fmt.Sprintf(`# HELP kubernetes_network_load Network load
+# TYPE kubernetes_network_load counter
+kubernetes_network_load 3 %[1]v
+`, ts.UnixNano()/int64(time.Millisecond))
+
+	suite.Equal(metricsTemplate, encoded)
+	suite.NotNil(encoded)
+
+	encodedb, err := context.EncodeMsgPack()
+	suite.Nil(err)
+	suite.NotNil(encodedb)
+
+	encodedBytes, err := context.EncodeText()
+	suite.Nil(err)
+	suite.NotNil(encodedBytes)
+
+	err = context.LabelAdd("message", "value")
+	suite.Nil(err)
+
+	encodedBytes, err = context.EncodeText()
+	suite.Nil(err)
+	suite.Contains(encodedBytes, "message")
 
 	encodedBytes, err = context.EncodeInflux()
 	suite.Nil(err)

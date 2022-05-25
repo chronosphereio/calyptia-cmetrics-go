@@ -296,3 +296,19 @@ func NewContext() (*Context, error) {
 	}
 	return &Context{context: cmt}, nil
 }
+
+func NewRawCMTPointer() (unsafe.Pointer, error) {
+	cmt := C.cmt_create()
+	if cmt == nil {
+		return nil, errors.New("cannot create cmt context")
+	}
+	return unsafe.Pointer(cmt), nil
+}
+
+func NewContextFromCMTPointer(cmt unsafe.Pointer) (*Context, error) {
+	if cmt == nil {
+		return nil, errors.New("Cannot create Context from nil")
+	}
+	ctx := (*C.struct_cmt)(cmt)
+	return &Context{context: ctx}, nil
+}
