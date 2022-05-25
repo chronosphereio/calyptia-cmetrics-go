@@ -23,7 +23,7 @@ import (
 )
 
 type Context struct {
-	context *C.struct_cmt
+	Context *C.struct_cmt
 }
 
 type Gauge struct {
@@ -101,7 +101,7 @@ func (g *Gauge) Set(ts time.Time, value float64, labels []string) error {
 }
 
 func (ctx *Context) LabelAdd(key, val string) error {
-	ret := C.cmt_labels_add_kv(ctx.context.static_labels, C.CString(key), C.CString(val))
+	ret := C.cmt_labels_add_kv(ctx.Context.static_labels, C.CString(key), C.CString(val))
 	if ret != 0 {
 		return errors.New("cannot set label to context")
 	}
@@ -109,7 +109,7 @@ func (ctx *Context) LabelAdd(key, val string) error {
 }
 
 func (ctx *Context) EncodePrometheus() (string, error) {
-	ret := C.cmt_encode_prometheus_create(ctx.context, 1)
+	ret := C.cmt_encode_prometheus_create(ctx.Context, 1)
 	if ret == nil {
 		return "", errors.New("error encoding to prometheus format")
 	}
@@ -117,7 +117,7 @@ func (ctx *Context) EncodePrometheus() (string, error) {
 }
 
 func (ctx *Context) EncodeText() (string, error) {
-	buffer := C.cmt_encode_text_create(ctx.context)
+	buffer := C.cmt_encode_text_create(ctx.Context)
 	if buffer == nil {
 		return "", errors.New("error encoding to text format")
 	}
@@ -127,7 +127,7 @@ func (ctx *Context) EncodeText() (string, error) {
 }
 
 func (ctx *Context) EncodeInflux() (string, error) {
-	buffer := C.cmt_encode_influx_create(ctx.context)
+	buffer := C.cmt_encode_influx_create(ctx.Context)
 	if buffer == nil {
 		return "", errors.New("error encoding to text format")
 	}
@@ -145,7 +145,7 @@ func NewContextSetFromMsgPack(msgPackBuffer []byte, offset int) ([]*Context, err
 		if err != nil {
 			return nil, err
 		}
-		ret = C.cmt_decode_msgpack_create(&ct.context, cBuffer, C.ulong(len(msgPackBuffer)), (*C.ulong)(unsafe.Pointer(&offset)))
+		ret = C.cmt_decode_msgpack_create(&ct.Context, cBuffer, C.ulong(len(msgPackBuffer)), (*C.ulong)(unsafe.Pointer(&offset)))
 		if ret == C.CMT_DECODE_MSGPACK_INSUFFICIENT_DATA {
 			break
 		}
@@ -168,7 +168,7 @@ func NewContextFromMsgPack(msgPackBuffer []byte, offset int64) (*Context, error)
 	}
 	cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
 	cOffset = (*C.ulong)(unsafe.Pointer(&offset))
-	ret := C.cmt_decode_msgpack_create(&ct.context, cBuffer, C.ulong(len(msgPackBuffer)), cOffset)
+	ret := C.cmt_decode_msgpack_create(&ct.Context, cBuffer, C.ulong(len(msgPackBuffer)), cOffset)
 	if ret != 0 {
 		return nil, errors.New("error decoding msgpack")
 	}
@@ -210,7 +210,7 @@ func (ctx *Context) EncodeMsgPack() ([]byte, error) {
 	var buffer *C.char
 	var bufferSize C.size_t
 
-	ret := C.cmt_encode_msgpack_create(ctx.context, &buffer, &bufferSize)
+	ret := C.cmt_encode_msgpack_create(ctx.Context, &buffer, &bufferSize)
 	if ret != 0 {
 		return nil, errors.New("error encoding to msgpack format")
 	}
@@ -218,7 +218,7 @@ func (ctx *Context) EncodeMsgPack() ([]byte, error) {
 }
 
 func (ctx *Context) GaugeCreate(namespace, subsystem, name, help string, labelKeys []string) (*Gauge, error) {
-	gauge := C.cmt_gauge_create(ctx.context,
+	gauge := C.cmt_gauge_create(ctx.Context,
 		C.CString(namespace),
 		C.CString(subsystem),
 		C.CString(name),
@@ -271,7 +271,7 @@ func (g *Counter) Set(ts time.Time, value float64, labels []string) error {
 }
 
 func (ctx *Context) CounterCreate(namespace, subsystem, name, help string, labelKeys []string) (*Counter, error) {
-	counter := C.cmt_counter_create(ctx.context,
+	counter := C.cmt_counter_create(ctx.Context,
 		C.CString(namespace),
 		C.CString(subsystem),
 		C.CString(name),
@@ -286,7 +286,7 @@ func (ctx *Context) CounterCreate(namespace, subsystem, name, help string, label
 }
 
 func (ctx *Context) Destroy() {
-	C.cmt_destroy(ctx.context)
+	C.cmt_destroy(ctx.Context)
 }
 
 func NewContext() (*Context, error) {
@@ -294,5 +294,5 @@ func NewContext() (*Context, error) {
 	if cmt == nil {
 		return nil, errors.New("cannot create cmt context")
 	}
-	return &Context{context: cmt}, nil
+	return &Context{Context: cmt}, nil
 }
