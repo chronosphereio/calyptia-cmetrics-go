@@ -3,7 +3,7 @@
 package cmetrics
 
 /*
-#cgo LDFLAGS: -L/usr/local/lib -lcmetrics -lmpack -lxxhash
+#cgo LDFLAGS: -L/usr/local/lib -lcmetrics -lcfl -lmpack -lxxhash
 #cgo CFLAGS: -I/usr/local/include/ -w
 
 #include <cmetrics/cmetrics.h>
@@ -122,7 +122,7 @@ func (ctx *Context) EncodeText() (string, error) {
 		return "", errors.New("error encoding to text format")
 	}
 	var text string = C.GoString(buffer)
-	C.cmt_sds_destroy(buffer)
+	C.cmt_encode_text_destroy(buffer)
 	return text, nil
 }
 
