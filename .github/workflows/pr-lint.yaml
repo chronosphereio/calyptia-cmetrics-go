@@ -1,0 +1,30 @@
+name: PR - linting
+on:
+    pull_request:
+    workflow_dispatch:
+
+jobs:
+  vale:
+    name: vale
+    runs-on: ubuntu-latest
+    permissions:
+        contents: read
+        pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: errata-ai/vale-action@reviewdog
+        with:
+            # support running on both commits and PRs
+            reporter: github-check
+  actionlint-pr:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    name: Actionlint
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          echo "::add-matcher::.github/actionlint-matcher.json"
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color -shellcheck=
+        shell: bash
