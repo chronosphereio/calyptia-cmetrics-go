@@ -4,18 +4,6 @@ on:
     workflow_dispatch:
 
 jobs:
-  vale:
-    name: vale
-    runs-on: ubuntu-latest
-    permissions:
-        contents: read
-        pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: errata-ai/vale-action@reviewdog
-        with:
-            # support running on both commits and PRs
-            reporter: github-check
   actionlint-pr:
     permissions:
       contents: read
