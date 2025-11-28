@@ -46,8 +46,23 @@ func GoStringArrayToCptr(arr []string) **C.char {
 	return (**C.char)(ptr)
 }
 
+// FreeCStringArray frees memory allocated by GoStringArrayToCptr.
+// Must be called after the C function that uses the array returns.
+func FreeCStringArray(ptr **C.char, length int) {
+	if ptr == nil {
+		return
+	}
+	for i := 0; i < length; i++ {
+		element := (**C.char)(unsafe.Pointer(uintptr(unsafe.Pointer(ptr)) + uintptr(i)*unsafe.Sizeof((*C.char)(nil))))
+		C.free(unsafe.Pointer(*element))
+	}
+	C.free(unsafe.Pointer(ptr))
+}
+
 func (g *Gauge) Add(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_gauge_add(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_gauge_add(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot substract gauge value")
 	}
@@ -55,7 +70,9 @@ func (g *Gauge) Add(ts time.Time, value float64, labels []string) error {
 }
 
 func (g *Gauge) Inc(ts time.Time, labels []string) error {
-	ret := C.cmt_gauge_inc(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_gauge_inc(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot increment gauge value")
 	}
@@ -63,7 +80,9 @@ func (g *Gauge) Inc(ts time.Time, labels []string) error {
 }
 
 func (g *Gauge) Dec(ts time.Time, labels []string) error {
-	ret := C.cmt_gauge_dec(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_gauge_dec(g.gauge, C.ulong(ts.UnixNano()), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot decrement gauge value")
 	}
@@ -71,7 +90,9 @@ func (g *Gauge) Dec(ts time.Time, labels []string) error {
 }
 
 func (g *Gauge) Sub(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_gauge_sub(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_gauge_sub(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot subtract gauge value")
 	}
@@ -80,11 +101,13 @@ func (g *Gauge) Sub(ts time.Time, value float64, labels []string) error {
 
 func (g *Gauge) GetVal(labels []string) (float64, error) {
 	var value C.double
+	cLabels := GoStringArrayToCptr(labels)
 	ret := C.cmt_gauge_get_val(
 		g.gauge,
 		C.int(len(labels)),
-		GoStringArrayToCptr(labels),
+		cLabels,
 		&value)
+	FreeCStringArray(cLabels, len(labels))
 
 	if ret != 0 {
 		return -1, errors.New("cannot get value for gauge")
@@ -93,7 +116,9 @@ func (g *Gauge) GetVal(labels []string) (float64, error) {
 }
 
 func (g *Gauge) Set(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_gauge_set(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_gauge_set(g.gauge, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot set gauge value")
 	}
@@ -101,7 +126,11 @@ func (g *Gauge) Set(ts time.Time, value float64, labels []string) error {
 }
 
 func (ctx *Context) LabelAdd(key, val string) error {
-	ret := C.cmt_labels_add_kv(ctx.context.static_labels, C.CString(key), C.CString(val))
+	cKey := C.CString(key)
+	cVal := C.CString(val)
+	ret := C.cmt_labels_add_kv(ctx.context.static_labels, cKey, cVal)
+	C.free(unsafe.Pointer(cKey))
+	C.free(unsafe.Pointer(cVal))
 	if ret != 0 {
 		return errors.New("cannot set label to context")
 	}
@@ -113,7 +142,9 @@ func (ctx *Context) EncodePrometheus() (string, error) {
 	if ret == nil {
 		return "", errors.New("error encoding to prometheus format")
 	}
-	return C.GoString(ret), nil
+	str := C.GoString(ret)
+	C.cmt_encode_prometheus_destroy(ret)
+	return str, nil
 }
 
 func (ctx *Context) EncodeText() (string, error) {
@@ -214,18 +245,33 @@ func (ctx *Context) EncodeMsgPack() ([]byte, error) {
 	if ret != 0 {
 		return nil, errors.New("error encoding to msgpack format")
 	}
-	return C.GoBytes(unsafe.Pointer(buffer), C.int(bufferSize)), nil
+	bytes := C.GoBytes(unsafe.Pointer(buffer), C.int(bufferSize))
+	C.cmt_encode_msgpack_destroy(buffer)
+	return bytes, nil
 }
 
 func (ctx *Context) GaugeCreate(namespace, subsystem, name, help string, labelKeys []string) (*Gauge, error) {
+	cNamespace := C.CString(namespace)
+	cSubsystem := C.CString(subsystem)
+	cName := C.CString(name)
+	cHelp := C.CString(help)
+	cLabelKeys := GoStringArrayToCptr(labelKeys)
+
 	gauge := C.cmt_gauge_create(ctx.context,
-		C.CString(namespace),
-		C.CString(subsystem),
-		C.CString(name),
-		C.CString(help),
+		cNamespace,
+		cSubsystem,
+		cName,
+		cHelp,
 		C.int(len(labelKeys)),
-		GoStringArrayToCptr(labelKeys),
+		cLabelKeys,
 	)
+
+	C.free(unsafe.Pointer(cNamespace))
+	C.free(unsafe.Pointer(cSubsystem))
+	C.free(unsafe.Pointer(cName))
+	C.free(unsafe.Pointer(cHelp))
+	FreeCStringArray(cLabelKeys, len(labelKeys))
+
 	if gauge == nil {
 		return nil, errors.New("cannot create gauge")
 	}
@@ -233,7 +279,9 @@ func (ctx *Context) GaugeCreate(namespace, subsystem, name, help string, labelKe
 }
 
 func (g *Counter) Add(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_counter_add(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_counter_add(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot add counter value")
 	}
@@ -241,7 +289,9 @@ func (g *Counter) Add(ts time.Time, value float64, labels []string) error {
 }
 
 func (g *Counter) Inc(ts time.Time, labels []string) error {
-	ret := C.cmt_counter_inc(g.counter, C.ulong(ts.UnixNano()), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_counter_inc(g.counter, C.ulong(ts.UnixNano()), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot Inc counter value")
 	}
@@ -250,11 +300,13 @@ func (g *Counter) Inc(ts time.Time, labels []string) error {
 
 func (g *Counter) GetVal(labels []string) (float64, error) {
 	var value C.double
+	cLabels := GoStringArrayToCptr(labels)
 	ret := C.cmt_counter_get_val(
 		g.counter,
 		C.int(len(labels)),
-		GoStringArrayToCptr(labels),
+		cLabels,
 		&value)
+	FreeCStringArray(cLabels, len(labels))
 
 	if ret != 0 {
 		return -1, errors.New("cannot get value for counter")
@@ -263,7 +315,9 @@ func (g *Counter) GetVal(labels []string) (float64, error) {
 }
 
 func (g *Counter) Set(ts time.Time, value float64, labels []string) error {
-	ret := C.cmt_counter_set(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), GoStringArrayToCptr(labels))
+	cLabels := GoStringArrayToCptr(labels)
+	ret := C.cmt_counter_set(g.counter, C.ulong(ts.UnixNano()), C.double(value), C.int(len(labels)), cLabels)
+	FreeCStringArray(cLabels, len(labels))
 	if ret != 0 {
 		return errors.New("cannot set counter value")
 	}
@@ -271,14 +325,27 @@ func (g *Counter) Set(ts time.Time, value float64, labels []string) error {
 }
 
 func (ctx *Context) CounterCreate(namespace, subsystem, name, help string, labelKeys []string) (*Counter, error) {
+	cNamespace := C.CString(namespace)
+	cSubsystem := C.CString(subsystem)
+	cName := C.CString(name)
+	cHelp := C.CString(help)
+	cLabelKeys := GoStringArrayToCptr(labelKeys)
+
 	counter := C.cmt_counter_create(ctx.context,
-		C.CString(namespace),
-		C.CString(subsystem),
-		C.CString(name),
-		C.CString(help),
+		cNamespace,
+		cSubsystem,
+		cName,
+		cHelp,
 		C.int(len(labelKeys)),
-		GoStringArrayToCptr(labelKeys),
+		cLabelKeys,
 	)
+
+	C.free(unsafe.Pointer(cNamespace))
+	C.free(unsafe.Pointer(cSubsystem))
+	C.free(unsafe.Pointer(cName))
+	C.free(unsafe.Pointer(cHelp))
+	FreeCStringArray(cLabelKeys, len(labelKeys))
+
 	if counter == nil {
 		return nil, errors.New("cannot create counter")
 	}
