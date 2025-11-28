@@ -16,6 +16,7 @@ package cmetrics
 #include <cmetrics/cmt_counter.h>
 */
 import "C"
+
 import (
 	"errors"
 	"time"
@@ -168,7 +169,7 @@ func (ctx *Context) EncodeInflux() (string, error) {
 }
 
 func NewContextSetFromMsgPack(msgPackBuffer []byte, offset int) ([]*Context, error) {
-	var cBuffer = (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
+	cBuffer := (*C.char)(unsafe.Pointer(&msgPackBuffer[0]))
 	var ctxSet []*Context
 	var ret C.int
 	for ret == C.CMT_DECODE_MSGPACK_SUCCESS {
