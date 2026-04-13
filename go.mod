@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/influxdata/influxdb v1.9.5
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
