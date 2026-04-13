@@ -1,0 +1,25 @@
+name: Install Dependencies
+description: Install CFL, cmetrics, and other required dependencies
+
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      env:
+        CFL_VERSION: "0.6.1"
+        CMETRICS_VERSION: "2.1.2"
+      run: |
+        # Install CFL (Chunk/Fluent Library)
+        wget https://github.com/fluent/cfl/releases/download/v${CFL_VERSION}/cfl_${CFL_VERSION}_amd64-headers.deb
+        wget https://github.com/fluent/cfl/releases/download/v${CFL_VERSION}/cfl_${CFL_VERSION}_amd64.deb
+        sudo dpkg -i cfl_${CFL_VERSION}_amd64-headers.deb cfl_${CFL_VERSION}_amd64.deb
+
+        # Install cmetrics
+        wget https://github.com/fluent/cmetrics/releases/download/v${CMETRICS_VERSION}/cmetrics_${CMETRICS_VERSION}_amd64-headers.deb
+        wget https://github.com/fluent/cmetrics/releases/download/v${CMETRICS_VERSION}/cmetrics_${CMETRICS_VERSION}_amd64.deb
+        sudo dpkg -i cmetrics_${CMETRICS_VERSION}_amd64-headers.deb cmetrics_${CMETRICS_VERSION}_amd64.deb
+
+        # Install mpack and xxhash from Ubuntu repos
+        sudo apt-get update
+        sudo apt-get install -y libmpack-dev libxxhash-dev
