@@ -14,9 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Todo, fix dependencies to be fetched from github artifacts.
-      - name: Dependencies
-        run: sudo dpkg -i external/*.deb
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -30,9 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Todo, fix dependencies to be fetched from github artifacts.
-      - name: Dependencies
-        run: sudo dpkg -i external/*.deb
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
@@ -45,6 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-dependencies
 
       - name: Set up Go
         uses: actions/setup-go@v5

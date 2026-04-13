@@ -3,7 +3,7 @@
 package cmetrics
 
 /*
-#cgo LDFLAGS: -L/usr/local/lib -lcmetrics -lcfl -lmpack -lxxhash
+#cgo LDFLAGS: -L/usr/local/lib -lcmetrics -lcfl -lmpack -lxxhash -lm
 #cgo CFLAGS: -I/usr/local/include/ -w
 
 #include <cmetrics/cmetrics.h>
