@@ -9,11 +9,17 @@ runs:
       env:
         CMETRICS_VERSION: "2.1.2"
       run: |
+        # Create temp directory for downloads
+        TEMP_DIR=$(mktemp -d)
+
         # Install cmetrics (includes bundled CFL)
-        wget https://github.com/fluent/cmetrics/releases/download/v${CMETRICS_VERSION}/cmetrics_${CMETRICS_VERSION}_amd64-headers.deb
-        wget https://github.com/fluent/cmetrics/releases/download/v${CMETRICS_VERSION}/cmetrics_${CMETRICS_VERSION}_amd64.deb
-        sudo dpkg -i cmetrics_${CMETRICS_VERSION}_amd64-headers.deb cmetrics_${CMETRICS_VERSION}_amd64.deb
+        wget -P "$TEMP_DIR" https://github.com/fluent/cmetrics/releases/download/v${CMETRICS_VERSION}/cmetrics_${CMETRICS_VERSION}_amd64-headers.deb
+        wget -P "$TEMP_DIR" https://github.com/fluent/cmetrics/releases/download/v${CMETRICS_VERSION}/cmetrics_${CMETRICS_VERSION}_amd64.deb
+        sudo dpkg -i "$TEMP_DIR"/cmetrics_${CMETRICS_VERSION}_amd64-headers.deb "$TEMP_DIR"/cmetrics_${CMETRICS_VERSION}_amd64.deb
 
         # Install mpack and xxhash from Ubuntu repos
         sudo apt-get update
         sudo apt-get install -y libmpack-dev libxxhash-dev
+
+        # Cleanup temp directory
+        rm -rf "$TEMP_DIR"
